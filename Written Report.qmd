@@ -1,0 +1,239 @@
+---
+title: "Written Report"
+author: Catherine Le
+format: 
+  pdf:
+    embed-resources: true
+editor: visual
+---
+
+# Introduction
+
+```{r, include=FALSE}
+# loading packages
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+
+# reading in the data
+path <- "~/Desktop/PM566-Final/Data/NPAO_National Survey.csv" 
+# dataset = nutrition, physical activity, and obesity
+npao_survey <- data.table::fread(path)
+```
+
+## Data Set Background
+
+This dataset is officially called the "Nutrition, Physical Activity, and Obesity - Behavioral Risk Factor Surveillance System" (BRFSS). BRFSS is an on-going, state-based telephone survey conducted by the CDC and state health departments. The data includes self-reported information on nutrition related information and risk factors for all 50 U.S. states. More specifically, it includes state-specific data on adult diet, physical activity, and weight status. This data set also includes information on the survey participants' demographics (e.g., age, ethnicity, income). In this data set, there are 88,629 rows and 33 columns.
+
+## Formulated Question
+
+What is the correlation between physical activity levels (e.g., reported exercise frequency) and diet habits (e.g., daily consumption of vegetables)?
+
+The intention of this final project is to further explore the stereotype that people who eat healthier also exercise often. Unfortunately, this data was collected through self-reported surveys, which resulted in numerous instances of missing demographic information. Consequently, I avoided attempting to investigate a question related to demographics due to the limitations of this data set.
+
+# Methods
+
+## Where I Acquired the Data Set
+
+I exported the data set from the Center for Disease Control and Prevention (CDC) website. Here is the link to access the data: <https://data.cdc.gov/Nutrition-Physical-Activity-and-Obesity/Nutrition-Physical-Activity-and-Obesity-Behavioral/hn4x-zwk7>
+
+## Cleaning the Data
+
+### Removing Insufficient Sample Size Data
+
+In this data set, there is a variable titled Data_Value_Footnote. In this column, there were multiple cases where it said "data not available because sample size is insufficient." I removed these rows because all the corresponding rows had NA for the data values. Unfortunately, I do not have enough contextual information to impute the average or mean. Furthermore, the states that had missing values seemed random, so there will should be no bias from removing these values. Therefore, I believed it was necessary to remove these values to avoid skewing my results.
+
+```{r, echo=FALSE}
+# filtering the data to remove the sample size is insufficient values
+filtered_npao <- npao_survey %>%
+  filter(!grepl("Data not available because sample size is insufficient.",
+  Data_Value_Footnote, fixed = TRUE))
+```
+
+### Checking for Missing Values
+
+There is a column in the data set titled Data_Value. This column shows percentages of survey respondents who answered "yes" or "no" to a question. The information in this column is integral to answering my formulated question. Therefore, it is important to determine if there are any missing values in this column.
+
+```{r, echo = FALSE}
+missing_values <- sum(is.na(filtered_npao$Data_Value))
+cat("Number of missing values is", missing_values, "\n")
+```
+
+Based on this output, there are no missing values in the Data_Value column.
+
+### Checking for Negative Values or Values Greater Than 100
+
+Due to the nature of the Data_Value column, there should not be any negative percentages or percentages over 100. Therefore, I am checking to see if there are any implausible values in this column.
+
+```{r, echo=FALSE}
+# checking for negative values
+negative_values <- filtered_npao$Data_Value < 0
+count_negative_values <- sum(negative_values)
+cat("Number of negative values is", count_negative_values, "\n")
+```
+
+Based on this output, there are no negative values in the Data_Value Column.
+
+```{r, echo=FALSE}
+# checking for any values above 100
+above_100 <- filtered_npao$Data_Value > 100
+count_above_100 <- sum(above_100)
+cat("Number of values greater than 100 is", count_above_100, "\n")
+```
+
+Based on this output, there are no values greater than 100 in the Data_Value Column.
+
+### 
+
+## Wrangling the Data
+
+In order to explore my formulated question further, I filtered out the data for exercise-related questions and vegetable-consumption related questions. I filtered the data set into a subset titled exercise_data. This subset contains rows where the survey question is "Percent of adults who engage in no leisure-time physical activity." I did the same for vegetable-consumption related questions. Here, I filtered the data set for rows that contained "Percent of adults who report consuming vegetables less than one time daily."
+
+```{r, include=FALSE}
+# filter rows for exercise-related questions
+exercise_data <- filtered_npao %>%
+  filter(str_detect(Question, "Percent of adults who engage in no leisure-time physical activity"))
+
+# filter rows for vegetable consumption-related questions
+vegetable_data <- filtered_npao %>%
+  filter(str_detect(Question, "Percent of adults who report consuming vegetables less than one time daily"))
+```
+
+I then grouped both new data sets by the variables YearStart (i.e., the year the survey started) and LocationDesc (i.e., the state the survey was given in). Then, using summarize(), I found the mean for the Data_Value column of each group. By averaging and filtering the datasets, I aim to facilitate the creation of more comprehensible plots using a more concise subset of the data.
+
+```{r, include=FALSE}
+exercise_data_aggregated <- exercise_data %>%
+  group_by(YearStart, LocationDesc) %>%
+  summarize(Data_Value = mean(Data_Value, na.rm = TRUE))
+
+vegetable_data_aggregated <- vegetable_data %>%
+  group_by(YearStart, LocationDesc) %>%
+  summarize(Data_Value = mean(Data_Value, na.rm = TRUE))
+```
+
+I then added a column to both aggregated data sets titled DataType. When I later merge the two datasets, this allows me to identify the rows that correspond with either the exercise survey question or the vegetable consumption survey question.
+
+```{r, echo=FALSE}
+exercise_data_aggregated <- mutate(exercise_data_aggregated, DataType = "Exercise")
+vegetable_data_aggregated <- mutate(vegetable_data_aggregated, DataType = "Vegetable")
+```
+
+In order to gain a better picture of what my filtered data set looks like at this point, below is a table of the aggregated exercise data.
+
+```{r, echo=FALSE}
+table1 <- exercise_data_aggregated %>%
+  select(DataType, YearStart, LocationDesc, Data_Value)
+head(table1)
+```
+
+Similarly, below is a table of the aggregated vegetable consumption data.
+
+```{r, echo=FALSE}
+table2 <- vegetable_data_aggregated %>%
+  select(DataType, YearStart, LocationDesc, Data_Value)
+head(table2)
+```
+
+Lastly, I merged the aggregated exercise data set and the aggregated vegetable data set into a final data set I could later make plots with.
+
+```{r, echo=FALSE}
+merged_data <- merge(exercise_data_aggregated, vegetable_data_aggregated, 
+                     by = c("YearStart", "LocationDesc"), 
+                     suffixes = c("_exercise", "_vegetable"))
+```
+
+## Data Exploration
+
+Below is a box-and-whisker plot illustrating the aggregated exercise data. This visualization provides a clearer understanding of the outliers present in the dataset, particularly those exceeding 36 percent.
+
+```{r, echo=FALSE}
+boxplot(exercise_data_aggregated$Data_Value, col = "steelblue")
+```
+
+Below is a box-and-whisker plot illustrating the aggregated vegetable consumption data. This visualization provides a clearer understanding of the outliers present in the data set, particularly those exceeding 27 percent and below 15 percent.
+
+```{r, echo=FALSE}
+boxplot(vegetable_data_aggregated$Data_Value, col = "steelblue")
+```
+
+Below, I have created a plot with the two boxplots placed next to each other. This allows for easier comparison between the two survey questions. This plot allows me to visually see if there are eyebrow-raising discrepancies between the median of the two data sets, which there are none.
+
+```{r, echo=FALSE}
+combined_data <- rbind(
+  transform(vegetable_data_aggregated, Variable = "Vegetable"),
+  transform(exercise_data_aggregated, Variable = "Exercise")
+)
+
+# Create a boxplot using ggplot2
+ggplot(combined_data, aes(x = Variable, y = Data_Value, fill = Variable)) +
+  geom_boxplot() +
+  labs(title = "Boxplots of Vegetable and Exercise Data",
+       x = "Survey Question",
+       y = "Data Value (%)",
+       fill = "Survey Question") +  # changing the legend title
+  scale_fill_manual(values = c("Vegetable" = "steelblue", "Exercise" = "steelblue")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_text(hjust = 0.5),  # centering the legend title
+    plot.title = element_text(hjust = 0.5)  # centering the plot title
+  )
+```
+
+The last tool I used for data exploration was to create a scatterplot where there are different colors for the DataType (vegetable survey question or exercise survey question) variable. Due to the large amount of data points, I jittered the data points and made them transparent to be easier to view. The intention of this plot is to see if there are any noticeable patterns between the two data sets. This plot illustrated that the vegetable survey questions were only conducted after 2017. In contrast, the survey questions about physical activity levels were conducted from 2012 to 2021.
+
+```{r, echo=FALSE}
+ggplot(data = combined_data, aes(x = jitter(YearStart), y = Data_Value, color = DataType)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Scatterplot of Vegetable and Exercise Surveys",
+       subtitle = "Data Aggregated by Year and State",
+       x = "Year",
+       y = "Data Value (%)",
+       color = "Data Type") +
+  scale_color_manual(values = c("Vegetable" = "lightpink", "Exercise" = "lightblue")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 9, hjust = 0.5),
+    axis.title = element_text(size = 10), 
+    legend.title = element_text(size = 10)  
+  )
+```
+
+# Results
+
+The scatterplot belows illustrates the association between the percentage of adults who engage in no leisure time physical activity and percentage of adults consuming vegetables less than one time daily. The data was aggregated by StartYear (i.e., the year the survey started) and LocationDesc (i.e., the state the survey was conducted in). In this plot, the black line is a linear regression line. In this context, the linear regression line has a positive slope.
+
+```{r, echo=FALSE}
+# Create a scatterplot
+ggplot(merged_data, aes(x = Data_Value_exercise, y = Data_Value_vegetable)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(title = "Association Between Physical Activity and Vegetable Consumption",
+       x = "% of Adults Engaging in No Leisure-Time Physical Activity",
+       y = "% of Adults Consuming Vegetables < One Time Daily",
+       subtitle = "Data Aggregated by Year and State",
+       caption = "Source: Behavioral Risk Factor Surveillance System (BRFSS)") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 9, hjust = 0.5),
+    axis.title = element_text(size = 9, face = "bold", margin = margin(b = 20)),
+    axis.text = element_text(size = 9),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9),
+    panel.grid.major = element_line(color = "lightgray"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
+
+```
+
+# Conclusion and Summary
+
+In conclusion, the scatterplot in the Results section shows a positive slope for the linear regression line between physical activity levels (e.g., reported exercise frequency) and diet habits (e.g., daily consumption of vegetables). This shows that as the average percentage of adults consuming vegetables less than one time daily increases, the average percentage of adults engaging in no leisure-time activity also increases. Within the context of this dataset, there is a positive association between the vegetable-consumption survey data and the exercise survey data.
+
+However it is important to note that while there is a positive correlation between the two survey data sets, it does not imply causation. It just suggests that the two variables move together. This does not necessarily mean that one variable causes the other. Furthermore, each survey had different target demographics which may have influenced this observed pattern. However, because there were numerous occasions where the self-reported surveys had missing demographic information, this is not something that I could have investigated further.
+
+Lastly, this data from the BRFSS is self-reported information on nutrition and physical acitivity level. Self-reporting does have limitations. Survey respondents might be consciously or unconsiously influenced by "social desirability." Participants may feel the need to give a more "socially perferable" answer to the survey questions regarding vegetable consumption and diet habits (especially because these surveys were conducted over the telephone). This may introduce a level of bias into this data set and affect the observed pattern.

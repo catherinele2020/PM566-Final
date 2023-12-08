@@ -1,0 +1,37 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "PM 566: Final Project",
+    "section": "",
+    "text": "Website created by Catherine Le\n\nBrief Description\nFindings:\n\n\nInteractive Figures\n\n\nDownloadable Written Report\nThis is a Quarto website. Click here to download Click here to download To learn more about Quarto websites visit https://quarto.org/docs/websites.\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "Written Report.html#dataset-background",
+    "href": "Written Report.html#dataset-background",
+    "title": "Written Report",
+    "section": "Dataset Background",
+    "text": "Dataset Background"
+  },
+  {
+    "objectID": "Written Report.html#wrangling-the-data",
+    "href": "Written Report.html#wrangling-the-data",
+    "title": "Written Report",
+    "section": "Wrangling the Data",
+    "text": "Wrangling the Data"
+  },
+  {
+    "objectID": "Written Report.html#data-exploration",
+    "href": "Written Report.html#data-exploration",
+    "title": "Written Report",
+    "section": "Data Exploration",
+    "text": "Data Exploration"
+  }
+]
