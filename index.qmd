@@ -29,6 +29,7 @@ library(tidyverse)
 library(ggplot2)
 library(dplyr)
 library(stringr)
+library(plotly)
 
 # reading in the data
 path <- "~/Desktop/PM566-Final/Data/NPAO_National Survey.csv" 
@@ -92,3 +93,42 @@ merged_data <- merge(exercise_data_aggregated, vegetable_data_aggregated,
                      by = c("YearStart", "LocationDesc"), 
                      suffixes = c("_exercise", "_vegetable"))
 ```
+
+## Interactive Plot #1
+
+```{r, echo=FALSE}
+# first interactive graph
+gg <- ggplot(merged_data, aes(x = Data_Value_exercise, y = Data_Value_vegetable)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(title = "Association Between Physical Activity and Vegetable Consumption",
+       x = "% of Adults Engaging in No Leisure-Time Physical Activity",
+       y = "% of Adults Consuming Vegetables < One Time Daily")
+
+# Convert ggplot to plotly
+plotly_graph <- ggplotly(gg)
+plotly_graph
+```
+
+Above is an interactive version of the graph in the Results section of my Written Report. The graph is a scatter plot visualizing the association between the "percentage of adults engaging in no leisure time physical activity" and the "percentage of adults consuming vegetables less than one time daily." Plotly allows us to hover and see the exact (x.y) value of each point. (The data_value_exercise is from the exercise survey data and the data_value_vegetable is from the vegetable consumption survey data).
+
+\
+The black line represents a linear regression trend. Its positive slope indicates a correlation, signifying a positive association between the two variables.
+
+```{r, echo=FALSE}
+merged_data %>%
+  plot_ly(x = ~Data_Value_exercise, y = ~Data_Value_vegetable,
+          type = 'scatter', mode = 'markers', color = ~LocationDesc,
+          hoverinfo = 'text',
+          text = ~paste(paste("State: ", LocationDesc, sep=""),
+                        paste("Year: ", YearStart, sep=""),
+                        paste("Avg % of Adults Who Engage In No Physical Activity: ", Data_Value_exercise, sep=""),
+                        paste("Avg % of Adults Who Do Not Eat Vegetables Daily: ", Data_Value_vegetable, sep=""), 
+                        sep = "<br>")) %>%
+  layout(
+    xaxis = list(title = "% of Adults Engaging in No Leisure-Time Physical Activity"),
+    yaxis = list(title = "% of Adults Consuming Vegetables < One Time Daily")
+  )
+```
+
+This plot is similar to the one above. However, the color of the points correspond to the LocationDesc variable in my dataset (i.e., the U.S. state the survey was conducted in). I also further specified the information that appears when you hover over the points. I specified the state, the year the survey was conducted, and the percentages of survey participants that answered yes to the physical activity level and vegetable data survey questions.
