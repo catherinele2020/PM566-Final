@@ -5,8 +5,6 @@ author: Catherine Le
 
 PM 566: FALL 2023
 
-Website created by Catherine Le
-
 # Downloadable Written Report
 
 [here](Written-Report.pdf) to download the written report.
@@ -25,6 +23,72 @@ By creating a scatter plot between the variables "percentage of adults engaging 
 
 # Interactive Figures
 
-```{r}
-1 + 1
+```{r, include=FALSE}
+# loading packages
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+
+# reading in the data
+path <- "~/Desktop/PM566-Final/Data/NPAO_National Survey.csv" 
+# dataset = nutrition, physical activity, and obesity
+npao_survey <- data.table::fread(path)
+```
+
+```{r, echo=FALSE}
+# filtering the data to remove the sample size is insufficient values
+filtered_npao <- npao_survey %>%
+  filter(!grepl("Data not available because sample size is insufficient.",
+  Data_Value_Footnote, fixed = TRUE))
+```
+
+```{r, include=FALSE}
+missing_values <- sum(is.na(filtered_npao$Data_Value))
+cat("Number of missing values is", missing_values, "\n")
+```
+
+```{r, include=FALSE}
+# checking for negative values
+negative_values <- filtered_npao$Data_Value < 0
+count_negative_values <- sum(negative_values)
+cat("Number of negative values is", count_negative_values, "\n")
+```
+
+```{r, include=FALSE}
+# checking for any values above 100
+above_100 <- filtered_npao$Data_Value > 100
+count_above_100 <- sum(above_100)
+cat("Number of values greater than 100 is", count_above_100, "\n")
+```
+
+```{r, include=FALSE}
+# filter rows for exercise-related questions
+exercise_data <- filtered_npao %>%
+  filter(str_detect(Question, "Percent of adults who engage in no leisure-time physical activity"))
+
+# filter rows for vegetable consumption-related questions
+vegetable_data <- filtered_npao %>%
+  filter(str_detect(Question, "Percent of adults who report consuming vegetables less than one time daily"))
+```
+
+```{r, include=FALSE}
+exercise_data_aggregated <- exercise_data %>%
+  group_by(YearStart, LocationDesc) %>%
+  summarize(Data_Value = mean(Data_Value, na.rm = TRUE))
+
+vegetable_data_aggregated <- vegetable_data %>%
+  group_by(YearStart, LocationDesc) %>%
+  summarize(Data_Value = mean(Data_Value, na.rm = TRUE))
+```
+
+```{r, echo=FALSE}
+exercise_data_aggregated <- mutate(exercise_data_aggregated, DataType = "Exercise")
+vegetable_data_aggregated <- mutate(vegetable_data_aggregated, DataType = "Vegetable")
+```
+
+```{r, echo=FALSE}
+merged_data <- merge(exercise_data_aggregated, vegetable_data_aggregated, 
+                     by = c("YearStart", "LocationDesc"), 
+                     suffixes = c("_exercise", "_vegetable"))
 ```
