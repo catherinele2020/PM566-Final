@@ -30,6 +30,7 @@ library(ggplot2)
 library(dplyr)
 library(stringr)
 library(plotly)
+library(RColorBrewer)
 
 # reading in the data
 path <- "~/Desktop/PM566-Final/Data/NPAO_National Survey.csv" 
@@ -110,10 +111,12 @@ plotly_graph <- ggplotly(gg)
 plotly_graph
 ```
 
-Above is an interactive version of the graph in the Results section of my Written Report. The graph is a scatter plot visualizing the association between the "percentage of adults engaging in no leisure time physical activity" and the "percentage of adults consuming vegetables less than one time daily." Plotly allows us to hover and see the exact (x.y) value of each point. (The data_value_exercise is from the exercise survey data and the data_value_vegetable is from the vegetable consumption survey data).
+Above is an interactive version of the graph in the Results section of my Written Report. The graph is a scatter plot visualizing the association between the "percentage of adults engaging in no leisure time physical activity" and the "percentage of adults consuming vegetables less than one time daily." ggplotly allows us to hover and see the exact (x.y) value of each point. (The data_value_exercise is the % of adults who do not exercise on a daily basis. The data_value_vegetable is the % of adults who do not consume vegetables on a daily basis)
 
 \
 The black line represents a linear regression trend. Its positive slope indicates a correlation, signifying a positive association between the two variables.
+
+## Interactive Plot #2
 
 ```{r, echo=FALSE}
 merged_data %>%
@@ -127,8 +130,9 @@ merged_data %>%
                         sep = "<br>")) %>%
   layout(
     xaxis = list(title = "% of Adults Engaging in No Leisure-Time Physical Activity"),
-    yaxis = list(title = "% of Adults Consuming Vegetables < One Time Daily")
+    yaxis = list(title = "% of Adults Consuming Vegetables < One Time Daily"),
+    title = "Association between Vegetable Consumption and Physical Activity Level"
   )
 ```
 
-This plot is similar to the one above. However, the color of the points correspond to the LocationDesc variable in my dataset (i.e., the U.S. state the survey was conducted in). I also further specified the information that appears when you hover over the points. I specified the state, the year the survey was conducted, and the percentages of survey participants that answered yes to the physical activity level and vegetable data survey questions.
+This plot is similar to the one above. However, the color of the points correspond to the LocationDesc variable in my dataset (i.e., the U.S. state the survey was conducted in). I also further specified the information that appears when you hover over the points. I specified the state, the year the survey was conducted, and the percentages of survey participants that answered yes to the physical activity level and vegetable consumption survey questions.
