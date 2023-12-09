@@ -7,9 +7,7 @@ PM 566: FALL 2023
 
 # Downloadable Written Report
 
-[here](Written-Report.pdf) to download the written report.
-
-[Click here to download](../Written-Report.pdf) This link has the slashes.
+Click [here](Written-Report.pdf) to download the written report.
 
 # Brief Description
 
